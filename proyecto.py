@@ -1,7 +1,7 @@
 import tensorflow as tf
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, Conv2D, Flatten, TimeDistributed, LSTM, MaxPooling2D, LSTM
+from keras.layers import Dense, Conv2D, Flatten, TimeDistributed, LSTM, MaxPooling2D, LSTM, Dropout
 from keras.datasets import mnist
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
@@ -20,7 +20,7 @@ mnist = tf.keras.datasets.mnist
 #Normalización de datos
 x_train = x_train.reshape(60000, 28, 28, 1)
 x_test = x_test.reshape(10000, 28, 28, 1)
-"""
+""" 
 y_train_one_hot = to_categorical(y_train)
 y_test_one_hot = to_categorical(y_test)
 
@@ -40,8 +40,8 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 model.fit(x_train, y_train_one_hot, validation_data=(x_test, y_test_one_hot), epochs=3)
 
 TF_SAVE_FILE = '/model/handwritten.h5'
-model.save(TF_SAVE_FILE) """
-
+model.save(TF_SAVE_FILE)
+ """
 
 #Graficación de resultados
 """ plt.plot(hist.history['accuracy'])
