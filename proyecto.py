@@ -20,7 +20,7 @@ mnist = tf.keras.datasets.mnist
 #Normalización de datos
 x_train = x_train.reshape(60000, 28, 28, 1)
 x_test = x_test.reshape(10000, 28, 28, 1)
-""" 
+
 y_train_one_hot = to_categorical(y_train)
 y_test_one_hot = to_categorical(y_test)
 
@@ -37,46 +37,34 @@ model.add(Dense(10, activation='softmax'))
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 #Entrenamiento del modelo
-model.fit(x_train, y_train_one_hot, validation_data=(x_test, y_test_one_hot), epochs=3)
+model.fit(x_train, y_train_one_hot, validation_data=(x_test, y_test_one_hot), epochs=5) 
 
 TF_SAVE_FILE = '/model/handwritten.h5'
-model.save(TF_SAVE_FILE)
- """
-
-#Graficación de resultados
-""" plt.plot(hist.history['accuracy'])
-plt.plot(hist.history['val_accuracy'])
-plt.title('Precisión del modelo')
-plt.ylabel('Precisión')
-plt.xlabel('Época')
-plt.legend(['Entrenamiento', 'Validación'], loc='upper left')
-plt.show() """
+model.save(TF_SAVE_FILE) 
 
 model = tf.keras.models.load_model('/model/handwritten.h5')
 
-""" predictions = model.predict(x_test[:4])
-print(np.argmax(predictions, axis=1))
-print(y_test[:4])
-
-for i in range(4):
-    image = x_test[i]
-    image = np.array(image, dtype='float')
-    pixels = image.reshape((28, 28))
-    plt.imshow(pixels, cmap='gray')
-    plt.show()
-    print("Predicción: ", np.argmax(predictions[i]))
-    print("Valor real: ", y_test[i])
-    print("\n") """
-
 #INTERFAZ
-def preprocess_image(image):
-    # Preprocesar la imagen antes de la predicción
-    image = image.resize((28, 28))
-    image = image.convert('L')  # Convertir a escala de grises
-    #image = np.array(image) / 255.0
-    image = np.expand_dims(image, axis=0)
-    image = np.invert(np.array(image))
-    return image
+def preprocess_image_cv(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Aplicar suavizado para eliminar ruido
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # Aplicar umbral adaptativo
+    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    digit_imgs = []
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        digit = thresh[y:y+h, x:x+w]
+        digit = cv2.resize(digit, (28, 28))
+        digit_imgs.append(digit)
+
+    return digit_imgs
+
 
 def predict_number(image):
     # Realizar la predicción utilizando el modelo cargado
@@ -138,11 +126,26 @@ class DigitRecognizerApp:
         self.label_result.config(text="El número es: ")
 
     def predict(self):
-        # Realizar la predicción y mostrar el resultado
-        preprocessed_image = preprocess_image(self.image)
-        prediction = predict_number(preprocessed_image)
+        # Convertir la imagen del canvas a un formato compatible con OpenCV
+        self.image.save("temp.png")
+        image_cv = cv2.imread("temp.png")
+        
+        # Preprocesar la imagen usando OpenCV
+        digit_imgs = preprocess_image_cv(image_cv)
 
-        self.label_result.config(text=f"El número es: {prediction}")
+        predictions = []
+        for digit_img in digit_imgs:
+            # Predecir cada dígito usando el modelo cargado
+            digit_img = digit_img.reshape(1, 28, 28, 1)
+            pred = model.predict(digit_img)
+            prediction = np.argmax(pred)
+            predictions.append(str(prediction))
+
+        predicted_number = int(''.join(predictions))
+        self.label_result.config(text=f"El número es: {predicted_number}")
+
+        # Eliminar el archivo temporal
+        os.remove("temp.png")
 
 if __name__ == "__main__":
     root = tk.Tk()
