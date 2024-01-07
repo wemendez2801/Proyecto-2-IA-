@@ -20,7 +20,7 @@ mnist = tf.keras.datasets.mnist
 #Normalización de datos
 x_train = x_train.reshape(60000, 28, 28, 1)
 x_test = x_test.reshape(10000, 28, 28, 1)
-""" 
+"""  
 y_train_one_hot = to_categorical(y_train)
 y_test_one_hot = to_categorical(y_test)
 
@@ -40,8 +40,8 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 model.fit(x_train, y_train_one_hot, validation_data=(x_test, y_test_one_hot), epochs=5) 
 
 TF_SAVE_FILE = '/model/handwritten.h5'
-model.save(TF_SAVE_FILE)  """
-
+model.save(TF_SAVE_FILE)  
+"""
 model = tf.keras.models.load_model('/model/handwritten.h5')
 
 #INTERFAZ
@@ -124,7 +124,6 @@ class DigitRecognizerApp:
         # Restablecer las coordenadas cuando el mouse se libera
         self.old_x = None
         self.old_y = None
-
 
     def clear_canvas(self):
         # Limpiar el canvas y la imagen
