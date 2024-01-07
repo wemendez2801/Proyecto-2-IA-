@@ -49,22 +49,30 @@ def preprocess_image_cv(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     # Aplicar suavizado para eliminar ruido
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)  # Aumentar el tamaño del kernel para un suavizado más grande
 
-    # Aplicar umbral adaptativo
-    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # Aplicar umbral adaptativo con diferentes valores
+    _, thresh = cv2.threshold(blurred, 120, 255, cv2.THRESH_BINARY_INV)
 
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     digit_imgs = []
+    bounding_boxes = []
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        digit = thresh[y:y+h, x:x+w]
-        digit = cv2.resize(digit, (28, 28))
-        digit_imgs.append(digit)
+        # Descartar contornos muy pequeños
+        if w * h > 100:
+            digit = thresh[y:y+h, x:x+w]
+            digit = cv2.resize(digit, (28, 28))
+            digit_imgs.append(digit)
+            bounding_boxes.append((x, digit))  # Se guarda solo la coordenada x junto al dígito
 
-    return digit_imgs
+    # Ordenar los dígitos según su posición en el lienzo
+    bounding_boxes.sort(key=lambda x: x[0])  # Ordenar por la coordenada x
 
+    digit_imgs_sorted = [digit for _, digit in bounding_boxes]
+
+    return digit_imgs_sorted
 
 def predict_number(image):
     # Realizar la predicción utilizando el modelo cargado
@@ -129,7 +137,7 @@ class DigitRecognizerApp:
         # Convertir la imagen del canvas a un formato compatible con OpenCV
         self.image.save("temp.png")
         image_cv = cv2.imread("temp.png")
-        
+    
         # Preprocesar la imagen usando OpenCV
         digit_imgs = preprocess_image_cv(image_cv)
 
